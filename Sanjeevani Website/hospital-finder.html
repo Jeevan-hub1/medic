@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediSahayak - Hospital Finder</title>
+    <!-- Fonts and Leaflet CSS -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <style>
+        :root {
+            --bg-color: #0b151e;
+            --card-bg: rgba(20, 35, 50, 0.45);
+            --border-color: rgba(0, 173, 179, 0.25);
+            --primary: #00adb3;
+            --primary-hover: #00878c;
+            --text-color: #e5f5f6;
+            --text-muted: #8ea8aa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background: #090f16;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: rgba(11, 21, 30, 0.85);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .finder-layout {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            height: calc(100vh - 70px);
+            overflow: hidden;
+        }
+
+        @media (max-width: 800px) {
+            .finder-layout {
+                grid-template-columns: 1fr;
+                grid-template-rows: 300px 1fr;
+            }
+        }
+
+        /* Sidebar listings */
+        .sidebar {
+            background: rgba(10, 20, 30, 0.35);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            overflow-y: auto;
+        }
+
+        .sidebar h3 {
+            margin: 0 0 10px 0;
+            color: var(--primary);
+            font-size: 1.25rem;
+        }
+
+        .hospital-card, .doctor-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .hospital-card:hover, .doctor-card:hover {
+            border-color: var(--primary);
+            background: rgba(0, 173, 179, 0.05);
+        }
+
+        .hospital-card h4, .doctor-card h4 {
+            margin: 0 0 5px 0;
+            font-size: 1rem;
+        }
+
+        .hospital-card p, .doctor-card p {
+            margin: 0;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .book-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-top: 10px;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .book-btn:hover {
+            background: var(--primary-hover);
+        }
+
+        /* Map box */
+        #map {
+            width: 100%;
+            height: 100%;
+            background: #090f16;
+        }
+
+        /* Modal booking */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: #0b151e;
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.5);
+            animation: modalFadeIn 0.3s;
+        }
+
+        @keyframes modalFadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .modal h3 {
+            margin: 0 0 15px 0;
+            color: var(--primary);
+        }
+
+        .close-btn {
+            float: right;
+            cursor: pointer;
+            font-size: 1.3rem;
+            color: var(--text-muted);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+
+        .form-group input, .form-group select {
+            padding: 10px;
+            background: rgba(10, 20, 30, 0.7);
+            border: 1px solid rgba(0, 173, 179, 0.25);
+            border-radius: 6px;
+            color: white;
+            font-size: 0.95rem;
+        }
+
+        /* Customize Leaflet elements to look dark and premium */
+        .leaflet-container {
+            background: #090f16 !important;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand">MediSahayak</a>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="chatbot.html">AI Chatbot</a>
+            <a href="voice-assistant.html">Voice Assistant</a>
+            <a href="http://127.0.0.1:7860" target="_blank">AI Vision Doctor</a>
+            <a href="report-analyzer.html">Report Analyzer</a>
+            <a href="predict.html">Symptom Checker</a>
+            <a href="hospital-finder.html" style="color: var(--primary);">Hospital Finder</a>
+        </div>
+    </nav>
+
+    <div class="finder-layout">
+        <!-- Sidebar listings -->
+        <div class="sidebar">
+            <h3 style="margin-bottom: 5px;">Nearby Services</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin: 0 0 15px 0;">Select a hospital/clinic marker or list card to book consultations.</p>
+            
+            <div id="services-list" style="display: flex; flex-direction: column; gap: 15px;">
+                <!-- Hospital & Doctor listings -->
+                <p style="color: var(--text-muted);">Finding your location...</p>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div id="map"></div>
+    </div>
+
+    <!-- Booking Modal -->
+    <div id="booking-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeBookingModal()">&times;</span>
+            <h3 id="modal-doctor-name">Book Consultation</h3>
+            
+            <div class="form-group">
+                <label for="appt-datetime">Appointment Date & Time</label>
+                <input type="datetime-local" id="appt-datetime" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="appt-type">Consultation Type</label>
+                <select id="appt-type">
+                    <option value="online">Online Video Consult</option>
+                    <option value="offline">In-Person Clinic Visit</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="appt-notes">Symptom description or notes</label>
+                <input type="text" id="appt-notes" placeholder="e.g. fever for 2 days">
+            </div>
+            
+            <button class="book-btn" style="padding: 12px;" onclick="submitAppointment()">Confirm Appointment</button>
+        </div>
+    </div>
+
+    <!-- Leaflet JS and logic -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script src="assets/js/api.js"></script>
+    <script>
+        let map;
+        let selectedDoctorId = null;
+        let hospitalMarkers = [];
+
+        // Detect user location
+        function initGeolocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(position => {
+                    setupMap(position.coords.latitude, position.coords.longitude);
+                }, () => {
+                    // Fallback to Bengaluru coord in India
+                    setupMap(12.9716, 77.5946);
+                });
+            } else {
+                setupMap(12.9716, 77.5946);
+            }
+        }
+
+        function setupMap(lat, lng) {
+            // Setup Leaflet map
+            map = L.map('map').setView([lat, lng], 14);
+
+            // Dark CartoDB Voyager tiles for matching dark glassmorphic UI
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+
+            // Add Patient current location marker
+            L.marker([lat, lng]).addTo(map)
+                .bindPopup("<b>Your Location</b>")
+                .openPopup();
+
+            loadNearbyHospitals(lat, lng);
+        }
+
+        async function loadNearbyHospitals(lat, lng) {
+            try {
+                // Fetch nearby hospitals from backend maps proxy
+                const data = await makeRequest(`/maps/hospitals?lat=${lat}&lng=${lng}`);
+                const list = document.getElementById("services-list");
+                list.innerHTML = "";
+                
+                // Clear old markers
+                hospitalMarkers.forEach(m => map.removeLayer(m));
+                hospitalMarkers = [];
+
+                if (data.hospitals && data.hospitals.length > 0) {
+                    data.hospitals.forEach((h, index) => {
+                        // 1. Add marker to map
+                        const marker = L.marker([h.lat, h.lng]).addTo(map)
+                            .bindPopup(`<b>${h.name}</b><br>${h.address || 'Medical Facility'}`);
+                        hospitalMarkers.push(marker);
+
+                        // 2. Create card in sidebar
+                        const card = document.createElement("div");
+                        card.className = "hospital-card";
+                        card.innerHTML = `
+                            <h4>🏨 ${h.name}</h4>
+                            <p>${h.address || 'Clinic Area'}</p>
+                            <p style="color: var(--primary); margin-top: 5px;">★ ${h.rating || '4.5'} rating</p>
+                            <button class="book-btn" onclick="openBookingFlow(${index + 1})">Book Doctor Consultation</button>
+                        `;
+                        list.appendChild(card);
+                    });
+                } else {
+                    list.innerHTML = `<p style="color: var(--text-muted);">No clinics found nearby. Try increasing search radius.</p>`;
+                }
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function openBookingFlow(docId) {
+            selectedDoctorId = docId; // Simple mapping
+            document.getElementById("modal-doctor-name").textContent = `Book Consultation (Doctor ID: ${docId})`;
+            document.getElementById("booking-modal").style.display = "flex";
+        }
+
+        function closeBookingModal() {
+            document.getElementById("booking-modal").style.display = "none";
+        }
+
+        async function submitAppointment() {
+            const dt = document.getElementById("appt-datetime").value;
+            const type = document.getElementById("appt-type").value;
+            const notes = document.getElementById("appt-notes").value;
+
+            if (!dt) {
+                alert("Please select a date and time");
+                return;
+            }
+
+            try {
+                await makeRequest("/appointments/book", "POST", {
+                    doctor_id: selectedDoctorId,
+                    datetime: dt,
+                    type,
+                    notes
+                });
+
+                alert("Consultation requested successfully!");
+                closeBookingModal();
+                window.location.href = "dashboard.html";
+            } catch (err) {
+                alert("Failed to book: " + err.message);
+            }
+        }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('booking-modal');
+            if (event.target === modal) {
+                closeBookingModal();
+            }
+        }
+
+        document.addEventListener("DOMContentLoaded", initGeolocation);
+    </script>
+</body>
+</html>

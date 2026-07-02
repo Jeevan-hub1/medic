@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediSahayak - Report Analyzer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b151e;
+            --card-bg: rgba(20, 35, 50, 0.45);
+            --border-color: rgba(0, 173, 179, 0.25);
+            --primary: #00adb3;
+            --primary-hover: #00878c;
+            --text-color: #e5f5f6;
+            --text-muted: #8ea8aa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background: #090f16;
+            color: var(--text-color);
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: rgba(11, 21, 30, 0.85);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary);
+        }
+
+        .analyzer-container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 0 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 35px;
+        }
+
+        .header h2 {
+            font-size: 2.2rem;
+            font-weight: 800;
+            color: var(--primary);
+            margin: 0 0 8px 0;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            margin: 0;
+        }
+
+        .upload-section {
+            background: var(--card-bg);
+            border: 2px dashed rgba(0, 173, 179, 0.3);
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 30px;
+        }
+
+        .upload-section:hover {
+            border-color: var(--primary);
+            background: rgba(0, 173, 179, 0.05);
+        }
+
+        .upload-icon {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 15px;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+        }
+
+        .loading-ring {
+            display: none;
+            margin: 20px auto;
+            border: 4px solid rgba(0, 173, 179, 0.1);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border-left-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .results-section {
+            display: none;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: var(--primary);
+            border-bottom: 1px solid rgba(0, 173, 179, 0.15);
+            padding-bottom: 10px;
+            font-size: 1.25rem;
+        }
+
+        /* Status colors */
+        .status-badge {
+            display: inline-block;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+        }
+
+        .status-Normal { background: rgba(40, 167, 69, 0.2); color: #28a745; }
+        .status-Attention { background: rgba(255, 193, 7, 0.2); color: #ffc107; }
+        .status-Critical { background: rgba(220, 53, 69, 0.2); color: #dc3545; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+
+        th, td {
+            padding: 10px 12px;
+            border-bottom: 1px solid rgba(0, 173, 179, 0.1);
+        }
+
+        th {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .flag-High { color: #dc3545; font-weight: 600; }
+        .flag-Low { color: #ffc107; font-weight: 600; }
+        .flag-Normal { color: #28a745; }
+
+        .list-items {
+            padding-left: 20px;
+            margin: 0;
+        }
+
+        .list-items li {
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand">MediSahayak</a>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="chatbot.html">AI Chatbot</a>
+            <a href="voice-assistant.html">Voice Assistant</a>
+            <a href="http://127.0.0.1:7860" target="_blank">AI Vision Doctor</a>
+            <a href="report-analyzer.html" style="color: var(--primary);">Report Analyzer</a>
+            <a href="predict.html">Symptom Checker</a>
+            <a href="hospital-finder.html">Hospital Finder</a>
+        </div>
+    </nav>
+
+    <div class="analyzer-container">
+        <div class="header">
+            <h2>AI Lab Report Analyzer</h2>
+            <p>Upload your lab reports (PDF, images, or text) to receive an immediate simplified summary and metrics review.</p>
+        </div>
+
+        <!-- File Select Area -->
+        <div class="upload-section" onclick="triggerFileSelect()">
+            <span class="upload-icon">📁</span>
+            <p style="margin: 0; font-weight: 600;">Drag and drop or click to upload report</p>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 5px;">Supports PDF or text reports</p>
+            <input type="file" id="file-input" style="display: none;" onchange="handleFileUpload(event)">
+        </div>
+
+        <div id="loading-spinner" class="loading-ring"></div>
+
+        <!-- Analysis Outputs -->
+        <div id="results" class="results-section">
+            <div class="card">
+                <h3>Analysis Summary</h3>
+                <div id="status-container"></div>
+                <p id="analysis-summary" style="line-height: 1.6;"></p>
+            </div>
+
+            <div class="card">
+                <h3>Lab Metrics Checked</h3>
+                <div style="overflow-x: auto;">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Test Parameter</th>
+                                <th>Report Value</th>
+                                <th>Standard Range</th>
+                                <th>Assessment</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metrics-table-body">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3>Recommendations & Guidelines</h3>
+                <ul id="recommendations-list" class="list-items">
+                    <!-- Populated dynamically -->
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/api.js"></script>
+    <script>
+        function triggerFileSelect() {
+            document.getElementById("file-input").click();
+        }
+
+        async function handleFileUpload(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            document.getElementById("loading-spinner").style.display = "block";
+            document.getElementById("results").style.display = "none";
+
+            const formData = new FormData();
+            formData.append("file", file);
+
+            try {
+                // Post report upload
+                const res = await makeRequest("/reports/analyze", "POST", formData, true);
+                renderResults(JSON.parse(res.analysis_json));
+            } catch (err) {
+                alert("Failed to analyze report: " + err.message);
+            } finally {
+                document.getElementById("loading-spinner").style.display = "none";
+            }
+        }
+
+        function renderResults(analysis) {
+            document.getElementById("results").style.display = "block";
+
+            // Status Badge
+            const statusContainer = document.getElementById("status-container");
+            const cleanStatus = analysis.status.replace(" Required", "");
+            statusContainer.innerHTML = `<span class="status-badge status-${cleanStatus}">${analysis.status}</span>`;
+
+            // Summary
+            document.getElementById("analysis-summary").textContent = analysis.summary;
+
+            // Metrics Table
+            const tbody = document.getElementById("metrics-table-body");
+            tbody.innerHTML = "";
+            
+            if (analysis.key_metrics && analysis.key_metrics.length > 0) {
+                analysis.key_metrics.forEach(m => {
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td><strong>${m.metric}</strong></td>
+                        <td>${m.value}</td>
+                        <td>${m.reference_range || "N/A"}</td>
+                        <td><span class="flag-${m.flag}">${m.flag}</span></td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } else {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No key metrics parsed. See report summary above.</td></tr>`;
+            }
+
+            // Recommendations
+            const list = document.getElementById("recommendations-list");
+            list.innerHTML = "";
+            analysis.recommendations.forEach(rec => {
+                const li = document.createElement("li");
+                li.textContent = rec;
+                list.appendChild(li);
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+python-dotenv
+passlib[bcrypt]
+python-multipart
+python-jose[cryptography]
+google-generativeai
+requests
+beautifulsoup4
+pytest
+psutil

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MediSahayak - Video Consultation</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #0b151e;
+            --card-bg: rgba(20, 35, 50, 0.45);
+            --border-color: rgba(0, 173, 179, 0.25);
+            --primary: #00adb3;
+            --primary-hover: #00878c;
+            --text-color: #e5f5f6;
+            --text-muted: #8ea8aa;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Outfit', sans-serif;
+            background: #090f16;
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 40px;
+            background: rgba(11, 21, 30, 0.85);
+            border-bottom: 1px solid var(--border-color);
+            backdrop-filter: blur(10px);
+        }
+
+        .navbar-brand {
+            font-size: 1.6rem;
+            font-weight: 800;
+            color: var(--primary);
+            text-decoration: none;
+        }
+
+        .btn-back {
+            background: none;
+            border: 1px solid var(--border-color);
+            color: var(--text-color);
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-back:hover {
+            border-color: var(--primary);
+            color: var(--primary);
+            background: rgba(0, 173, 179, 0.05);
+        }
+
+        .video-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            background: #000;
+        }
+
+        #jitsi-container {
+            width: 100%;
+            height: 100%;
+        }
+
+        .precall-card {
+            position: absolute;
+            background: rgba(11, 21, 30, 0.95);
+            border: 1px solid var(--border-color);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            z-index: 100;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            backdrop-filter: blur(15px);
+        }
+
+        .precall-card h3 {
+            margin: 0 0 10px 0;
+            color: var(--primary);
+        }
+
+        .precall-card p {
+            color: var(--text-muted);
+            margin: 0 0 20px 0;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+
+        .btn-join {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            transition: background 0.3s;
+        }
+
+        .btn-join:hover {
+            background: var(--primary-hover);
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <a href="index.html" class="navbar-brand">MediSahayak</a>
+        <a href="dashboard.html" class="btn-back">← Back to Dashboard</a>
+    </nav>
+
+    <div class="video-container">
+        <!-- Pre-call Consent Card -->
+        <div id="precall-card" class="precall-card">
+            <h3>Consultation Checklist</h3>
+            <p>Ensure you are in a quiet room, have granted camera/microphone access, and have a stable internet connection before joining.</p>
+            <button class="btn-join" onclick="joinCall()">Enter Video Call</button>
+        </div>
+
+        <!-- Jitsi iframe placeholder -->
+        <div id="jitsi-container"></div>
+    </div>
+
+    <!-- Load Jitsi Meet External API Script -->
+    <script src="https://meet.jit.si/external_api.js"></script>
+    <script>
+        // Parse parameters from query string
+        function getQueryParam(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function joinCall() {
+            document.getElementById("precall-card").style.display = "none";
+            
+            const roomUrl = getQueryParam("room");
+            const apptId = getQueryParam("id");
+            
+            let roomName = "";
+            if (roomUrl) {
+                // Extract room name from meet.jit.si url
+                roomName = roomUrl.split("/").pop();
+            } else {
+                roomName = `medisahayak-consultation-${apptId || Math.floor(Math.random() * 100000)}`;
+            }
+
+            const domain = 'meet.jit.si';
+            const options = {
+                roomName: roomName,
+                parentNode: document.querySelector('#jitsi-container'),
+                configOverwrite: { startWithAudioMuted: false, startWithVideoMuted: false },
+                interfaceConfigOverwrite: {
+                    SHOW_JITSI_WATERMARK: false,
+                    SHOW_BRAND_WATERMARK: false,
+                    SHOW_WATERMARK_FOR_GUESTS: false
+                }
+            };
+            
+            const api = new JitsiMeetExternalAPI(domain, options);
+            
+            // Handle call hangup
+            api.addEventListener('videoConferenceLeft', () => {
+                window.location.href = "dashboard.html";
+            });
+        }
+    </script>
+</body>
+</html>
