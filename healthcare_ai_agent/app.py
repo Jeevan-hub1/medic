@@ -7,8 +7,18 @@ import requests
 from bs4 import BeautifulSoup
 from typing import List
 
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass
+
 # Gemini API Endpoint
-GEMINI_API_KEY = "AIzaSyBxmj0zGRP-ndq2VKHjvh1q-XW3_Lrliq0"  # Replace with your Gemini API key
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")  # Set GEMINI_API_KEY in your environment / .env
+if not GEMINI_API_KEY:
+    raise RuntimeError(
+        "GEMINI_API_KEY is not set. Add it to your environment or a .env file."
+    )
 GEMINI_API_URL = "https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent"
 
 __location__ = os.path.dirname(os.path.abspath(__file__))

@@ -73,6 +73,91 @@ MediSahayak is a comprehensive healthcare application designed to **bridge gaps 
 - **QR-based scanning** to verify authenticity at all levels.
 - **Integration for government & NGOs** to track medicine quality.
 
+## 📁 Repository Structure
+
+This repository bundles several loosely-coupled sub-projects, each of which can be run independently:
+
+| Path | What it is | Stack |
+|------|------------|-------|
+| `backend/` | Main REST API for the platform (auth, chat, reports, predictions, recommendations, appointments, notifications, video, maps). Also serves the website at `/app`. | FastAPI, SQLAlchemy, SQLite, Gemini |
+| `Sanjeevani Website/` | The web frontend (dashboard, doctors, chatbot, report analyzer, etc.). | HTML, CSS, vanilla JS |
+| `Artemaya Chatbot/` | RAG-based nutrition/menstrual-health advisor API. | FastAPI, LangChain, Chroma, Gemini |
+| `ai-doctor-2.0-voice-and-vision-main/` | Voice + vision "AI doctor" demo (speak a symptom, upload an image, get a spoken response). | Gradio, Groq (Whisper + vision LLM), ElevenLabs/gTTS |
+| `Voice to Voice Conversational AI/` | Low-latency voice medical assistant plus standalone speech-to-text and text-to-speech web demos. | Streamlit, Flask, Groq/Gemini |
+| `healthcare_ai_agent/` | CLI agent that scrapes trusted health sources and answers queries. | asyncio, BeautifulSoup, Gemini |
+| `FakeMedicine.ipynb` | Notebook exploring counterfeit-medicine detection. | Jupyter |
+
+## ⚙️ Getting Started
+
+### Prerequisites
+- **Python 3.11+** and **pip**
+- Create and activate a virtual environment per sub-project you run:
+  ```bash
+  python -m venv .venv
+  source .venv/bin/activate   # Windows: .venv\Scripts\activate
+  ```
+- API keys as needed (never commit them — use a `.env` file):
+  - `GEMINI_API_KEY` — Google AI Studio (backend, Artemaya, healthcare_ai_agent)
+  - `GROQ_API_KEY` — Groq (ai-doctor, Voice to Voice)
+  - `ELEVENLABS_API_KEY` — ElevenLabs (ai-doctor, optional; gTTS works without it)
+
+### 1. Backend API + Website
+```bash
+cd backend
+pip install -r requirements.txt
+cp .env.example .env        # then fill in GEMINI_API_KEY and SECRET_KEY
+uvicorn main:app --reload
+```
+- API: <http://localhost:8000/api> · Interactive docs: <http://localhost:8000/docs>
+- Website (served by the backend): <http://localhost:8000/app>
+- On first run, sample doctor accounts are seeded (password `doctor123`).
+
+### 2. Sanjeevani Website (standalone)
+The site is served automatically by the backend at `/app`. To run it on its own, serve the folder with any static server (so relative paths and the API base URL resolve correctly):
+```bash
+cd "Sanjeevani Website"
+python -m http.server 5500
+```
+Then open <http://localhost:5500>. Make sure the backend is running and that the site's origin is listed in `ALLOWED_ORIGINS`.
+
+### 3. Artemaya Chatbot (nutrition RAG API)
+```bash
+cd "Artemaya Chatbot"
+pip install -r requirements.txt
+# set GEMINI_API_KEY in a .env file
+cd src
+uvicorn rag_model:app --reload --port 8001
+```
+The Chroma vector store under `db/chroma_db` is reused if present, and rebuilt from `documents/` otherwise.
+
+### 4. AI Doctor (voice + vision)
+```bash
+cd ai-doctor-2.0-voice-and-vision-main
+pip install -r requirements.txt
+# set GROQ_API_KEY (and optionally ELEVENLABS_API_KEY) in a .env file
+python gradio_app.py
+```
+Gradio prints a local URL (default <http://localhost:7860>).
+
+### 5. Voice to Voice Conversational AI
+```bash
+cd "Voice to Voice Conversational AI"
+pip install -r requirements.txt
+# set the required API keys in a .env file
+streamlit run hey.py
+```
+The `speech to text/` and `text to speech/` folders contain standalone browser demos — open their `index.html` in a browser.
+
+### 6. Healthcare AI Agent (CLI)
+```bash
+cd healthcare_ai_agent
+pip install -r ../backend/requirements.txt   # reuses requests, bs4, psutil, python-dotenv
+# set GEMINI_API_KEY in a .env file
+python app.py
+```
+
+> **Security note:** All API keys are read from environment variables / `.env` files. Never hardcode secrets in source, and never commit `.env` files (they are covered by `.gitignore`).
+
 ## 🛠️ Tech Stack
 
 - **AI & NLP:** OpenAI Whisper, FastAPI, Gradio, Langflow, Crew AI  

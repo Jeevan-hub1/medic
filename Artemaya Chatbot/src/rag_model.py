@@ -306,17 +306,6 @@ async def chat_endpoint(request: ChatRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/chat", response_model=ChatResponse)
-async def chat_endpoint(request: ChatRequest):
-    """
-    API endpoint to interact with the nutrition advisor.
-    """
-    try:
-        response = get_personalized_response(request.query, db)
-        return ChatResponse(response=response)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
 
 @app.get("/health")
 async def health_check():
