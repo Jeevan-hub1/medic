@@ -6,7 +6,12 @@ from dotenv import load_dotenv
 
 load_dotenv(override=True)
 
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "AIzaSyAOCDwJo1KglB4QLfGUN2Np15kv64VvJRQ")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+if not GEMINI_API_KEY:
+    raise RuntimeError(
+        "GEMINI_API_KEY is not set. Add it to your environment or a .env file "
+        "(see backend/.env.example)."
+    )
 client = genai.Client(api_key=GEMINI_API_KEY)
 
 # Model fallback order: newest → older (each has its own free quota bucket)

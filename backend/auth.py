@@ -1,4 +1,6 @@
 import os
+import secrets
+import warnings
 from datetime import datetime, timedelta
 from typing import Optional
 from fastapi import Depends, HTTPException, status
@@ -13,7 +15,17 @@ import models
 
 load_dotenv()
 
-SECRET_KEY = os.getenv("SECRET_KEY", "e8f9e0d1656f707f18579d460efd208940bb23287661cf6f95c1c876b5bc938b")
+SECRET_KEY = os.getenv("SECRET_KEY")
+if not SECRET_KEY:
+    # No secret configured: generate an ephemeral one so the app still runs in
+    # development. Tokens will be invalidated on every restart. ALWAYS set
+    # SECRET_KEY in production (see backend/.env.example).
+    SECRET_KEY = secrets.token_hex(32)
+    warnings.warn(
+        "SECRET_KEY is not set; using a temporary key that changes on restart. "
+        "Set SECRET_KEY in your environment for stable, secure tokens.",
+        RuntimeWarning,
+    )
 ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
